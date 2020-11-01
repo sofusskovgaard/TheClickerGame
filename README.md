@@ -17,9 +17,9 @@ At demonstrere at man opfylder faget "GUI Programmering" målpinde. Herunder at 
 
 Følgende krav er ledende og skal bruges til at få en idé om hvad applikationen skal omhandle.
 
-- [ ] Der skal være en counter som viser mængden af ENHEDER man har optjent, som en slags balance.
-- [ ] Der skal en knap man kan trykke på for at inkrementere counteren med en.
-- [ ] Der skal være nogle passive "klikkere" så countere inkrementere passivt hvert sekund.
-- [ ] Der skal være en uendelig Task kørende til at håndtere den passive inkrementering af counteren.
-- [ ] Der skal være mulighed for at købe opgraderinger/multiplikatorer så man inkrementere mere ved hvert klik.
+- [x] Der skal være en counter som viser mængden af ENHEDER man har optjent, som en slags balance.
+- [x] Der skal være en knap man kan trykke på for at inkrementere counteren med en.
+- [x] Der skal være nogle passive "klikkere" så countere inkrementere passivt hvert sekund.
+- [x] Der skal være en uendelig *~~Task~~* Service kørende til at håndtere den passive inkrementering af counteren.
+- [x] Der skal være mulighed for at købe opgraderinger/multiplikatorer så man inkrementere mere ved hvert klik.
 - [ ] Der skal være mulighed for at købe opgraderinger/multiplikatorer til hver af de passive klikker typer så de inkrementerer flere ENHEDER per sekund.
