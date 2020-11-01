@@ -1,16 +1,181 @@
 ﻿@page "/counter"
+@using System.Diagnostics
+@using System.Reflection
+@using TheClickerGame.Common.ClickUpgrades
+@using TheClickerGame.Common.CountGenerators
+@using TheClickerGame.Services.Services.CounterService
+@using TheClickerGame.Services.Services.ViewService
+@using TheClickerGame.Common.CountGenerators.CursorGenerator
+@inject ICounterService CounterService
+@inject IViewService ViewService
 
-<h1>Counter</h1>
+@{
+    ViewService.WideView = false;
 
-<p>Current count: @currentCount</p>
-
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
-
-@code {
-    private int currentCount = 0;
-
-    private void IncrementCount()
+    AvailableUpgrades = Assembly.GetAssembly(typeof(ClickUpgrade)).GetTypes().Where(x => typeof(IClickUpgrade).IsAssignableFrom(x) && !x.IsAbstract && !x.IsInterface).Where(x => CounterService.ClickUpgrades.All(u => u.GetType() != x)).OrderBy(x =>
     {
-        currentCount++;
-    }
+        var instance = (ClickUpgrade) Activator.CreateInstance(x);
+        return instance.SortOrder;
+    });
+
+    OwnedUpgrades = Assembly.GetAssembly(typeof(ClickUpgrade)).GetTypes().Where(x => typeof(IClickUpgrade).IsAssignableFrom(x) && !x.IsAbstract && !x.IsInterface).Where(x => CounterService.ClickUpgrades.Any(u => u.GetType() == x)).OrderBy(x =>
+    {
+        var instance = (ClickUpgrade) Activator.CreateInstance(x);
+        return instance.SortOrder;
+    });
+
+    CountGenerators = Assembly.GetAssembly(typeof(CountGenerator)).GetTypes().Where(x => typeof(ICountGenerator).IsAssignableFrom(x) && !x.IsAbstract && !x.IsInterface).OrderBy(x =>
+    {
+        var instance = (CountGenerator) Activator.CreateInstance(x);
+        return instance.Price;
+    });
 }
+
+@code
+{
+    private IEnumerable<Type> AvailableUpgrades;
+
+    private IEnumerable<Type> OwnedUpgrades;
+
+    private IEnumerable<Type> CountGenerators;
+
+    protected override void OnInitialized()
+    {
+        CounterService.CounterChanged += CounterChanged;
+    }
+
+    async void CounterChanged(object sender, EventArgs e)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+}
+
+    <div class="d-flex mb-3">
+        <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(10)">+10</button>
+        <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(100)">+100</button>
+        <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(1000)">+1000</button>
+        <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(10000)">+10000</button>
+        <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(100000)">+100000</button>
+        <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(1000000)">+1000000</button>
+        <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(10000000)">+10000000</button>
+        <button class="btn btn-light btn-sm" @onclick="() => CounterService.IncrementCounterWithoutEvent(100000000)">+100000000</button>
+    </div>
+
+<div class="row">
+    <div class="col-md-8">
+
+        <div class="w-100 d-flex flex-column align-items-center justify-content-center click-animated" @onclick="@(async () => await CounterService.IncrementCounterWithoutEventAsync())">
+            <h1 class="display-1 mb-0" title="@CounterService.Counter">@Math.Floor(CounterService.Counter)</h1>
+            <h5 class="font-weight-normal text-muted mb-5">@(CounterService.GetTotalMultiplier()) per second</h5>
+        </div>
+
+        @*<button class="btn btn-light btn-block btn-lg my-5" @onclick="@(async () => await CounterService.IncrementCounterWithoutEventAsync())">+@CounterService.GetTotalClickMultiplier()</button>*@
+
+        @if (AvailableUpgrades.Any())
+        {
+            <section>
+                <div class="d-flex flex-column mb-3">
+                    <h5>Upgrades</h5>
+                    <small>List of available upgrades</small>
+                </div>
+
+                <div class="row">
+
+                    @foreach (var type in AvailableUpgrades)
+                    {
+                        var instance = (ClickUpgrade)Activator.CreateInstance(type);
+                        var buyUpgrade = typeof(ICounterService).GetMethod("BuyUpgradeAsync")?.MakeGenericMethod(type);
+                        var canBuyUpgrade = (bool)typeof(ICounterService).GetMethod("CanBuyUpgrade")?.MakeGenericMethod(type).Invoke(CounterService, null);
+
+                        <div class="col-md-4">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        @instance.Name
+                                    </h5>
+
+                                    <p>@instance.Description</p>
+
+                                    <div class="d-flex align-items-center">
+                                        <button disabled="@(!canBuyUpgrade)" class="btn @(canBuyUpgrade ? "btn-primary btn-animated" : "btn-light") btn-block ml-1" @onclick="@(async () => await (Task)buyUpgrade.Invoke(CounterService, null))">@instance.Price</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+            </section>
+        }
+
+        @if (OwnedUpgrades.Any())
+        {
+            <section>
+                <div class="d-flex flex-column mb-3">
+                    <h5>Owned Upgrades</h5>
+                    <small>List of owned upgrades</small>
+                </div>
+
+                <div class="row">
+
+                    @foreach (var type in OwnedUpgrades)
+                    {
+                        var instance = (ClickUpgrade)Activator.CreateInstance(type);
+
+                        <div class="col-md-4">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        @instance.Name
+                                    </h5>
+
+                                    <p>@instance.Description</p>
+
+                                    <div class="d-flex align-items-center">
+                                        <small class="text-muted ml-auto">Owned</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                </div>
+
+            </section>
+        }
+
+    </div>
+
+    <div class="col-md-4">
+
+        @foreach (var type in CountGenerators)
+        {
+            var instance = (CountGenerator)Activator.CreateInstance(type);
+            var getGeneratorCount = typeof(ICounterService).GetMethod("GetGeneratorCount")?.MakeGenericMethod(type);
+            var getGeneratorPrice = typeof(ICounterService).GetMethod("GetGeneratorPrice")?.MakeGenericMethod(type);
+            var buyGenerator = typeof(ICounterService).GetMethod("BuyGeneratorAsync")?.MakeGenericMethod(type);
+            var canBuyGenerator = typeof(ICounterService).GetMethod("CanBuyGenerator")?.MakeGenericMethod(type);
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <span class="badge badge-dark">@instance.Multiplier</span>
+                        <span class="badge badge-light">@(getGeneratorCount.Invoke(CounterService, null))</span>
+                        @instance.Name
+                    </h5>
+
+                    <p>@instance.Description</p>
+
+                    <div class="d-flex align-items-center">
+                        <button disabled="@(!(bool)canBuyGenerator.Invoke(CounterService, new object[]{ 100 }))" class="btn @((bool)canBuyGenerator.Invoke(CounterService, new object[]{ 100 }) ? "btn-primary btn-animated" : "btn-light") ml-auto" @onclick="@(async () => await (Task)buyGenerator.Invoke(CounterService, new object[]{ 100 }))">+100</button>
+                        <button disabled="@(!(bool)canBuyGenerator.Invoke(CounterService, new object[]{ 10 }))" class="btn @((bool)canBuyGenerator.Invoke(CounterService, new object[]{ 10 }) ? "btn-primary btn-animated" : "btn-light") ml-1" @onclick="@(async () => await (Task)buyGenerator.Invoke(CounterService, new object[]{ 10 }))">+10</button>
+                        <button disabled="@(!(bool)canBuyGenerator.Invoke(CounterService, new object[]{ 1 }))" class="btn @((bool)canBuyGenerator.Invoke(CounterService, new object[]{ 1 }) ? "btn-primary btn-animated" : "btn-light") ml-1" @onclick="@(async () => await (Task)buyGenerator.Invoke(CounterService, new object[]{ 1 }))">+1</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

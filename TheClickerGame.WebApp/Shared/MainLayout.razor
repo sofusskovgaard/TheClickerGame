@@ -1,15 +1,9 @@
-﻿@inherits LayoutComponentBase
+﻿@using TheClickerGame.Services.Services.ViewService
+@inherits LayoutComponentBase
+@inject IViewService ViewService
 
-<div class="sidebar">
-    <NavMenu />
-</div>
+<NavMenu />
 
-<div class="main">
-    <div class="top-row px-4">
-        <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-    </div>
-
-    <div class="content px-4">
-        @Body
-    </div>
-</div>
+<main class="@(ViewService.WideView ? "container-fluid" : "container") my-4">
+    @Body
+</main>

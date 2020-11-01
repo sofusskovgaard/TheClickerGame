@@ -12,25 +12,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TheClickerGame.WebApp</title>
     <base href="~/" />
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
     <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
     <link href="css/site.css" rel="stylesheet" />
 </head>
 <body>
-    <app>
-        <component type="typeof(App)" render-mode="ServerPrerendered" />
-    </app>
 
-    <div id="blazor-error-ui">
-        <environment include="Staging,Production">
-            An error has occurred. This application may no longer respond until reloaded.
-        </environment>
-        <environment include="Development">
-            An unhandled exception has occurred. See browser dev tools for details.
-        </environment>
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
-    </div>
+<app>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+</app>
 
-    <script src="_framework/blazor.server.js"></script>
+@*<div id="blazor-error-ui" class="d-none">
+    <environment include="Staging,Production">
+        An error has occurred. This application may no longer respond until reloaded.
+    </environment>
+    <environment include="Development">
+        An unhandled exception has occurred. See browser dev tools for details.
+    </environment>
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>*@
+
+<script src="_framework/blazor.server.js"></script>
+<script>
+    window.Blazor.defaultReconnectionHandler._reconnectCallback = function(d) {
+        document.location.reload();
+    }
+</script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+/*@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -177,7 +177,52 @@ app {
     }
 
     .sidebar .collapse {
-        /* Never collapse the sidebar for wide screens */
+        /* Never collapse the sidebar for wide screens 
         display: block;
     }
+}*/
+
+a.nav-link.active {
+    color: #000 !important;
+    font-weight: 600;
+}
+
+
+.click-animated {
+    /*box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;*/
+
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+
+    transition: all .3s;
+}
+
+.click-animated:hover {
+    /*box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;*/
+    transform: scale(1.03);
+}
+
+.click-animated:active {
+    /*box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;*/
+    transform: scale(.98);
+}
+
+.btn-animated {
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    transition: all .3s;
+}
+
+.btn-animated:hover {
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    transform: scale(1.03);
+}
+
+.btn-animated:active {
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+    transform: scale(.98);
 }
