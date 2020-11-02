@@ -1,7 +1,5 @@
 ﻿@page "/"
+@inject IJSRuntime JsRuntime
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
-
-<SurveyPrompt Title="How is Blazor working for you?" />
+<p>Do something really cool with javascript</p>
+<button @onclick="@(async () => await JsRuntime.InvokeVoidAsync("DoSomethingReallyCool"))">Do something really cool</button>

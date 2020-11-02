@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using TheClickerGame.Services.HostedServices.CounterHostedService;
+using TheClickerGame.Services.Services.CounterService;
 
 namespace TheClickerGame.WebApp
 {
@@ -27,9 +28,10 @@ namespace TheClickerGame.WebApp
                 {
                     webBuilder.UseStartup<Startup>();
                 })
-                .ConfigureServices(service =>
+                .ConfigureServices(services =>
                 {
-                    service.AddHostedService<CounterHostedService>();
+                    // services.AddHostedService<CounterHostedService>();
+                    // services.AddScoped<ICounterService, CounterService>();
                 });
     }
 }

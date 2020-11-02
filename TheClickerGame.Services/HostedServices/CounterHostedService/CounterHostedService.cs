@@ -6,48 +6,44 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
-
+using Microsoft.Extensions.Logging;
 using TheClickerGame.Services.Services.CounterService;
 
 namespace TheClickerGame.Services.HostedServices.CounterHostedService
 {
-    public class CounterHostedService : IHostedService, IDisposable
+    public class CounterHostedService : BackgroundService, IHostedService
     {
-        private Timer _timer;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public IServiceProvider Services { get; }
+        private readonly ILogger<CounterHostedService> _logger;
 
-        public CounterHostedService(IServiceProvider services)
+        public CounterHostedService(ILogger<CounterHostedService> logger, IServiceScopeFactory serviceScopeFactory)
         {
-            Services = services;
+            _logger = logger;
+            _serviceScopeFactory = serviceScopeFactory;
         }
-
-        public Task StartAsync(CancellationToken cancellationToken)
+        
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(500));
-            
-            return Task.CompletedTask;
-        }
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            _timer?.Change(Timeout.Infinite, 0);
+                    var counterService = scope.ServiceProvider.GetRequiredService<ICounterService>();
 
-            return Task.CompletedTask;
-        }
-
-        private void DoWork(object state)
-        {
-            using var scope = Services.CreateScope();
-
-            var counterService = scope.ServiceProvider.GetRequiredService<ICounterService>();
-
-            counterService.IncrementCounter();
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
+                    await counterService.IncrementCounterAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, ex.Message, ex);
+                }
+                finally
+                {
+                    await Task.Delay(500, stoppingToken);
+                }
+            }
         }
     }
 }

@@ -15,6 +15,8 @@ namespace TheClickerGame.Services.Services.CounterService
         List<CountGenerator> CountGenerators { get; set; }
 
         List<ClickUpgrade> ClickUpgrades { get; set; }
+        
+        List<CountGenerator> CountGeneratorBuyingQueue { get; set; }
 
         decimal Counter { get; }
 
@@ -50,6 +52,17 @@ namespace TheClickerGame.Services.Services.CounterService
         Task BuyGeneratorAsync<T>(int amount = 1) where T : CountGenerator;
 
         void BuyGenerator<T>(int amount = 1) where T : CountGenerator;
+        
+        
+        Task QueueGeneratorAsync<T>(int amount = 1) where T : CountGenerator;
+
+        void QueueGenerator<T>(int amount = 1) where T : CountGenerator;
+
+
+        Task CheckGeneratorQueueAsync();
+
+        void CheckGeneratorQueue();
+        
 
         Task<bool> HasUpgradeAsync<T>() where T : ClickUpgrade;
 

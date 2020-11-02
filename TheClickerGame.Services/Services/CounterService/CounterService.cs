@@ -22,6 +22,8 @@ namespace TheClickerGame.Services.Services.CounterService
         private static object countGeneratorsLocker = new object();
 
         private static object clickUpgradesLocker = new object();
+        
+        private static object countGeneratorBuyingQueueLocker = new object();
 
         #endregion
 
@@ -30,6 +32,8 @@ namespace TheClickerGame.Services.Services.CounterService
         public List<CountGenerator> CountGenerators { get; set; } = new List<CountGenerator>();
 
         public List<ClickUpgrade> ClickUpgrades { get; set; } = new List<ClickUpgrade>();
+        
+        public List<CountGenerator> CountGeneratorBuyingQueue { get; set; } = new List<CountGenerator>();
 
         public decimal Counter => _counter;
 
@@ -282,6 +286,100 @@ namespace TheClickerGame.Services.Services.CounterService
             catch { }
         }
 
+        public async Task QueueGeneratorAsync<T>(int amount = 1) where T : CountGenerator
+        {
+            await Task.Run(() =>
+            {
+                lock (countGeneratorBuyingQueueLocker)
+                {
+                    var generator = CountGeneratorBuyingQueue.FirstOrDefault(x => x.GetType() == typeof(T));
+
+                    if (generator != null)
+                    {
+                        generator.Quantity += amount;
+                    }
+                    else
+                    {
+                        generator = Activator.CreateInstance<T>();
+                        generator.Quantity = amount;
+                        CountGeneratorBuyingQueue.Add(generator);
+                    }
+                }
+            });
+        }
+
+        public void QueueGenerator<T>(int amount = 1) where T : CountGenerator
+        {
+            lock (countGeneratorBuyingQueueLocker)
+            {
+                var generator = CountGeneratorBuyingQueue.FirstOrDefault(x => x.GetType() == typeof(T));
+
+                if (generator != null)
+                {
+                    generator.Quantity += amount;
+                }
+                else
+                {
+                    generator = Activator.CreateInstance<T>();
+                    generator.Quantity = amount;
+                    CountGeneratorBuyingQueue.Add(generator);
+                }
+            }
+        }
+
+        public async Task CheckGeneratorQueueAsync()
+        {
+            await Task.Run(() =>
+            {
+                lock (countGeneratorBuyingQueueLocker)
+                {
+                    if (!CountGeneratorBuyingQueue.Any()) return;
+                    
+                    var ordered = CountGeneratorBuyingQueue.OrderBy(x => GetType().GetMethod("GetGeneratorPrice").MakeGenericMethod(x.GetType()).Invoke(this, null));
+                    var canBuy = (bool) GetType().GetMethod("CanBuyGenerator").MakeGenericMethod(ordered.First().GetType()).Invoke(this, null);
+
+                    if (canBuy)
+                    {
+                        GetType().GetMethod("BuyGenerator").MakeGenericMethod(ordered.First().GetType()).Invoke(this, null);
+
+                        if (ordered.First().Quantity > 1)
+                        {
+                            ordered.First().Quantity -= 1;
+                        }
+                        else
+                        {
+                            CountGeneratorBuyingQueue.Remove(ordered.First());
+                        }
+                    }
+                }
+            });
+        }
+
+        public void CheckGeneratorQueue()
+        {
+            lock (countGeneratorBuyingQueueLocker)
+            {
+                if (!CountGeneratorBuyingQueue.Any()) return;
+                
+                var ordered = CountGeneratorBuyingQueue.OrderBy(x => GetType().GetMethod("GetGeneratorPrice").MakeGenericMethod(x.GetType()).Invoke(this, null));
+                var canBuy = (bool) GetType().GetMethod("CanBuyGenerator").MakeGenericMethod(ordered.First().GetType()).Invoke(this, null);
+
+                if (canBuy)
+                {
+                    GetType().GetMethod("BuyGenerator").MakeGenericMethod(ordered.First().GetType()).Invoke(this, null);
+
+                    if (ordered.First().Quantity > 1)
+                    {
+                        ordered.First().Quantity -= 1;
+                    }
+                    else
+                    {
+                        CountGeneratorBuyingQueue.Remove(ordered.First());
+                    }
+                }
+            }
+        }
+
         public async Task<bool> HasUpgradeAsync<T>() where T : ClickUpgrade
         {
             return await Task.Run(
@@ -371,10 +469,10 @@ namespace TheClickerGame.Services.Services.CounterService
                     {
                         lock (locker)
                         {
-                            _counter = decimal.Add(_counter, amount ?? (CountGenerators.Sum(x => x.Multiplier) * 0.5M));
+                            _counter = decimal.Add(_counter, amount ?? CountGenerators.Sum(x => x.Quantity * x.Multiplier) * 0.25M);
 
-                            var handler = CounterChanged;
-                            handler?.Invoke(null, EventArgs.Empty);
+                            // var handler = CounterChanged;
+                            // handler?.Invoke(null, EventArgs.Empty);
                         }
                     }
                 }
@@ -387,10 +485,10 @@ namespace TheClickerGame.Services.Services.CounterService
             {
                 lock (locker)
                 {
-                    _counter = decimal.Add(_counter, amount ?? (CountGenerators.Sum(x => x.Multiplier) * 0.5M));
+                    _counter = decimal.Add(_counter, amount ?? CountGenerators.Sum(x => x.Quantity * x.Multiplier) * 0.25M);
 
-                    var handler = CounterChanged;
-                    handler?.Invoke(null, EventArgs.Empty);
+                    // var handler = CounterChanged;
+                    // handler?.Invoke(null, EventArgs.Empty);
                 }
             }
         }
