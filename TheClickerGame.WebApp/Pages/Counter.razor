@@ -40,21 +40,25 @@
 
     private IEnumerable<Type> CountGenerators;
 
+    private Timer countTimer;
+
+    private Timer queueTimer;
+
     protected override void OnInitialized()
     {
         CounterService.CounterChanged += CounterChanged;
         
-        new Timer(_ =>
+        countTimer = new Timer(_ =>
         {
             CounterService.IncrementCounter();
             InvokeAsync(StateHasChanged);
         }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(250));
         
-        new Timer(_ =>
+        queueTimer = new Timer(_ =>
         {
             CounterService.CheckGeneratorQueue();
             InvokeAsync(StateHasChanged);
-        }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(2000));
+        }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(250));
     }
 
     async void CounterChanged(object sender, EventArgs e)
@@ -64,11 +68,13 @@
 
 }
 
+
+
 <div class="row">
     <div class="col-md-8">
-        
+
         <div class="position-sticky" style="top: 1rem">
-            
+
             <div class="d-flex mb-3">
                 <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(10)">+10</button>
                 <button class="btn btn-light btn-sm mr-2" @onclick="() => CounterService.IncrementCounterWithoutEvent(100)">+100</button>
@@ -87,6 +93,40 @@
 
             @*<button class="btn btn-light btn-block btn-lg my-5" @onclick="@(async () => await CounterService.IncrementCounterWithoutEventAsync())">+@CounterService.GetTotalClickMultiplier()</button>*@
 
+            @if (CounterService.CountGeneratorBuyingQueue.Any())
+            {
+                <section>
+                    <div class="d-flex flex-column mb-3">
+                        <h5>Next in queue</h5>
+                        <small>The next count generators in queue</small>
+                    </div>
+
+                    <div class="row">
+                        @foreach (var item in CounterService.CountGeneratorBuyingQueue.OrderBy(x => typeof(ICounterService).GetMethod("GetGeneratorPrice").MakeGenericMethod(x.GetType()).Invoke(CounterService, new object[] { 1 })))
+                        {
+                            var itemPrice = (decimal)typeof(ICounterService).GetMethod("GetGeneratorPrice")?.MakeGenericMethod(item.GetType()).Invoke(CounterService, new object[] { 1 });
+                            var canBuyGenerator = (bool)typeof(ICounterService).GetMethod("CanBuyGenerator")?.MakeGenericMethod(item.GetType()).Invoke(CounterService, new object[] { 1 });
+
+                            <div class="col-md-4">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            @(item.Quantity > 1 ? item.Quantity.ToString() : String.Empty) @item.Name
+                                        </h5>
+
+                                        <p>@item.Description</p>
+
+                                        <div class="align-items-center d-flex">
+                                            <button disabled="@(!canBuyGenerator)" class="btn @(canBuyGenerator ? "btn-primary btn-animated" : "btn-light")">@itemPrice</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
             @if (AvailableUpgrades.Any())
             {
                 <section>
@@ -99,9 +139,9 @@
 
                         @foreach (var type in AvailableUpgrades)
                         {
-                            var instance = (ClickUpgrade) Activator.CreateInstance(type);
+                            var instance = (ClickUpgrade)Activator.CreateInstance(type);
                             var buyUpgrade = typeof(ICounterService).GetMethod("BuyUpgrade")?.MakeGenericMethod(type);
-                            var canBuyUpgrade = (bool) typeof(ICounterService).GetMethod("CanBuyUpgrade")?.MakeGenericMethod(type).Invoke(CounterService, null);
+                            var canBuyUpgrade = (bool)typeof(ICounterService).GetMethod("CanBuyUpgrade")?.MakeGenericMethod(type).Invoke(CounterService, null);
 
                             <div class="col-md-4">
                                 <div class="card mb-3">
@@ -137,7 +177,7 @@
 
                         @foreach (var type in OwnedUpgrades)
                         {
-                            var instance = (ClickUpgrade) Activator.CreateInstance(type);
+                            var instance = (ClickUpgrade)Activator.CreateInstance(type);
 
                             <div class="col-md-4">
                                 <div class="card mb-3">

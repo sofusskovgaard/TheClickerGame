@@ -361,12 +361,12 @@ namespace TheClickerGame.Services.Services.CounterService
             {
                 if (!CountGeneratorBuyingQueue.Any()) return;
                 
-                var ordered = CountGeneratorBuyingQueue.OrderBy(x => GetType().GetMethod("GetGeneratorPrice").MakeGenericMethod(x.GetType()).Invoke(this, null));
-                var canBuy = (bool) GetType().GetMethod("CanBuyGenerator").MakeGenericMethod(ordered.First().GetType()).Invoke(this, null);
+                var ordered = CountGeneratorBuyingQueue.OrderBy(x => GetType().GetMethod("GetGeneratorPrice").MakeGenericMethod(x.GetType()).Invoke(this, new object[]{ 1 }));
+                var canBuy = (bool) GetType().GetMethod("CanBuyGenerator").MakeGenericMethod(ordered.First().GetType()).Invoke(this, new object[] { 1 });
 
                 if (canBuy)
                 {
-                    GetType().GetMethod("BuyGenerator").MakeGenericMethod(ordered.First().GetType()).Invoke(this, null);
+                    GetType().GetMethod("BuyGenerator").MakeGenericMethod(ordered.First().GetType()).Invoke(this, new object[] { 1 });
 
                     if (ordered.First().Quantity > 1)
                     {
